@@ -2,7 +2,6 @@
 
 ##############################
 # TODO
-## 食事間のインターバルを検出
 ##############################
 
 
@@ -13,7 +12,7 @@ import itertools
 import matplotlib.pyplot as plt
 
 
-def read_csvfile(file_path=r"D:\DeeplabCut\movie\210617_no2\210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv"):
+def read_csvfile(file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv"):
     # make header
     dfcolumns = pd.read_csv(file_path, skiprows=1, nrows=2, header=None)
     header = dfcolumns.iloc[0] + "[" + dfcolumns.iloc[1] + "]"
@@ -143,11 +142,10 @@ def calc_eat_interval(eat_duration_df):
 
 def main():
     df = read_csvfile(
-        "~/PycharmProjects/DeepLabCut_test/my_testcodes/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv")
+        "data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv")
     scene = Scene(df)
     duration = calc_eat_duration(scene)
     interval = calc_eat_interval(duration)
-    print(interval)
 
 if __name__ == "__main__":
     main()
