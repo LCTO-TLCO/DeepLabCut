@@ -132,7 +132,8 @@ def calc_eat_interval(eat_duration_df):
         return False
     eat_interval = pd.DataFrame(columns=["interval"])
     for i in eat_duration_df.index[:-1]:
-        eat_interval = eat_interval.append({"interval":(eat_duration_df.iloc[i+1].start - eat_duration_df.iloc[i].end)},ignore_index=True)
+        eat_interval = eat_interval.append(
+            {"interval": (eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end)}, ignore_index=True)
     eat_interval.interval.hist()
     plt.savefig("fig/eat_interval_hist.png")
     plt.show()
@@ -140,12 +141,20 @@ def calc_eat_interval(eat_duration_df):
     return eat_interval
 
 
-def main():
+def export_eat_duration_and_interval():
     df = read_csvfile(
         "data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv")
     scene = Scene(df)
-    duration = calc_eat_duration(scene)
-    interval = calc_eat_interval(duration)
+    duration_touch = calc_eat_duration(scene, threshold_frames=100)
+    duration_eat = calc_eat_duration(scene)
+    interval_eat = calc_eat_interval(duration_eat)
+    interval_touch = calc_eat_interval(duration_eat)
+    return duration_eat, interval_eat, duration_touch, interval_touch
+
+
+def export_diff_wild_penk():
+    pass
+
 
 if __name__ == "__main__":
-    main()
+    export_eat_duration_and_interval()
