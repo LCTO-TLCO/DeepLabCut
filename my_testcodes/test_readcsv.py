@@ -8,8 +8,10 @@
 import numpy as np
 import pandas as pd
 from scipy.spatial import distance
+import scipy as sp
 import itertools
 import matplotlib.pyplot as plt
+import test_datas
 
 
 def read_csvfile(file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv"):
@@ -95,13 +97,19 @@ def _count_continuous(df):
             continue
         while len(false_index[
                       (false_index >= end_index) & (false_index <= end_index + frame_threshold)]) < frame_threshold:
-            end_index = false_index[false_index > end_index + 1][0]
+            end_index = false_index[false_index > end_index + 1]
+            if end_index.empty:
+                break
+            else:
+                end_index = end_index[0]
+        if not isinstance(end_index, np.int64):
+            break
         count_df = count_df.append({"start": start_index, "end": end_index}, ignore_index=True)
         current_tail = end_index
     return count_df
 
 
-def calc_eat_duration(scene, threshold_frames=30, threshold_distance=40):
+def calc_eat_duration(scene, mouse_data, threshold_frames=30, threshold_distance=150):
     target_parts = ["lefthand", "righthand", "mouth"]
     distance_df_dict = {}
     distance_name = []
@@ -118,43 +126,86 @@ def calc_eat_duration(scene, threshold_frames=30, threshold_distance=40):
     distance_df["eating_flag"] = distance_df.sum(axis=1) < threshold_distance
     eating_frames = _count_continuous(distance_df)
     eating_frames = eating_frames[(eating_frames.end - eating_frames.start) > threshold_frames]
-    eating_frames = eating_frames.assign(duration=(eating_frames.end - eating_frames.start))
+    eating_frames = eating_frames.assign(duration=(eating_frames.end - eating_frames.start)).reset_index()
     # plot
     eating_frames.duration.hist()
-    plt.savefig("fig/eating_duration_hist.png")
+    plt.title(f"{mouse_data['no']} type:{mouse_data['type']} eat duration")
+    plt.xlabel("frames")
+    plt.ylabel("frequency")
+    plt.savefig(f"fig/{mouse_data['no']}_{mouse_data['type']}_eat_duration_hist.png")
     plt.show()
     plt.close()
     return eating_frames
 
 
-def calc_eat_interval(eat_duration_df):
+def calc_eat_interval(eat_duration_df, mouse_data):
     if eat_duration_df.size <= 1:
-        return False
+        return pd.DataFrame(columns=["interval"])
     eat_interval = pd.DataFrame(columns=["interval"])
     for i in eat_duration_df.index[:-1]:
         eat_interval = eat_interval.append(
             {"interval": (eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end)}, ignore_index=True)
     eat_interval.interval.hist()
-    plt.savefig("fig/eat_interval_hist.png")
+    plt.title(f"{mouse_data['no']} type:{mouse_data['type']} eat interval")
+    plt.xlabel("frames")
+    plt.ylabel("frequency")
+    plt.savefig(f"fig/{mouse_data['no']}_{mouse_data['type']}_eat_interval_hist.png")
     plt.show()
     plt.close()
     return eat_interval
 
 
-def export_eat_duration_and_interval():
-    df = read_csvfile(
-        "data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv")
-    scene = Scene(df)
-    duration_touch = calc_eat_duration(scene, threshold_frames=100)
-    duration_eat = calc_eat_duration(scene)
-    interval_eat = calc_eat_interval(duration_eat)
-    interval_touch = calc_eat_interval(duration_eat)
-    return duration_eat, interval_eat, duration_touch, interval_touch
+def export_eat_duration_and_interval(files: dict, params={}):
+    df_duration_eat = pd.DataFrame()
+    df_interval_eat = pd.DataFrame()
+    df_duration_touch = pd.DataFrame()
+    df_interval_touch = pd.DataFrame()
+    eat_frames = params.get("eat_frames", 30)
+    touch_frames = params.get("touch_frames", 10)
+    eat_distances = params.get("eat_distances", 100)
+    touch_distances = params.get("touch_distances", 100)
+    for no, path in files.items():
+        df = read_csvfile(path)
+        scene = Scene(df)
+        mouse_data = {"no": no}
+        # 30Hz
+        duration_touch = calc_eat_duration(scene, {"no": no, "type": "touch"}, threshold_frames=touch_frames,
+                                           threshold_distance=touch_distances)
+        duration_eat = calc_eat_duration(scene, {"no": no, "type": "eat"}, threshold_frames=eat_frames,
+                                         threshold_distance=eat_distances)
+        interval_touch = calc_eat_interval(duration_touch, {"no": no, "type": "touch"})
+        interval_eat = calc_eat_interval(duration_eat, {"no": no, "type": "eat"})
+        # add to df
+        if not duration_eat.empty:
+            df_duration_eat[no] = duration_eat.duration
+        if not interval_eat.empty:
+            df_interval_eat[no] = interval_eat.interval
+        if not duration_touch.empty:
+            df_duration_touch[no] = duration_touch.duration
+        if not interval_touch.empty:
+            df_interval_touch[no] = interval_touch.interval
+    return df_duration_eat, df_interval_eat, df_duration_touch, df_interval_touch
 
 
-def export_diff_wild_penk():
-    pass
-
+def export_diff_wild_penk(wild_list, penk_list):
+    # 平均
+    col = ["duration_eat", "interval_eat", "duration_touch", "interval_touch"]
+    wild = dict(zip(col, wild_list))
+    penk = dict(zip(col, penk_list))
+    wild_list[0].mean(axis=0)
+    # TODO 二群を検定する手法を考える
+    ## 食べた回数に全体に対して検定
+    ##
 
 if __name__ == "__main__":
-    export_eat_duration_and_interval()
+    wild_file = {
+        "no2": "data/210617-no2DLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
+        "no3": "data/210617-no3DLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
+        "no4": "data/210617-no4shortDLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
+    }
+    penk_file = {
+        "penk": "data/210622-penkcaf_no3_1DLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
+    }
+    wild_dfs = export_eat_duration_and_interval(wild_file)
+    penk_dfs = export_eat_duration_and_interval(penk_file, {"eat_distances": 50, "touch_distances": 50})
+    export_diff_wild_penk(wild_dfs, penk_dfs)
