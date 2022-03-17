@@ -3,7 +3,7 @@
 ##############################
 # TODO
 ##############################
-
+import os.path
 
 import numpy as np
 import pandas as pd
@@ -11,7 +11,8 @@ from scipy.spatial import distance
 import scipy as sp
 import itertools
 import matplotlib.pyplot as plt
-import test_datas
+# import test_datas
+import pathlib
 
 
 def read_csvfile(file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv"):
@@ -155,7 +156,7 @@ def calc_eat_interval(eat_duration_df, mouse_data):
     return eat_interval
 
 
-def export_eat_duration_and_interval(files: dict, params={}):
+def export_eat_duration_and_interval(files, params={}):
     df_duration_eat = pd.DataFrame()
     df_interval_eat = pd.DataFrame()
     df_duration_touch = pd.DataFrame()
@@ -164,7 +165,8 @@ def export_eat_duration_and_interval(files: dict, params={}):
     touch_frames = params.get("touch_frames", 10)
     eat_distances = params.get("eat_distances", 100)
     touch_distances = params.get("touch_distances", 100)
-    for no, path in files.items():
+    paths = read_items(files)
+    for no, path in paths.items():
         df = read_csvfile(path)
         scene = Scene(df)
         mouse_data = {"no": no}
@@ -196,6 +198,25 @@ def export_diff_wild_penk(wild_list, penk_list):
     # TODO 二群を検定する手法を考える
     ## 食べた回数に全体に対して検定
     ##
+
+
+def read_items(path):
+    ret_val = {}
+    path_obj = pathlib.Path(path)
+    print(os.getcwd())
+    print(path_obj)
+    if path_obj.is_dir():
+        print("is dir")
+        files = list(path_obj.glob('**/*.csv'))
+        ret_val = dict(zip([file.stem for file in files], [str(file) for file in files]))
+    elif path_obj.is_file():
+        print("is a file")
+        ret_val = {path_obj.stem: str(path_obj)}
+    else:
+        print("is dict")
+
+    return ret_val
+
 
 if __name__ == "__main__":
     wild_file = {
