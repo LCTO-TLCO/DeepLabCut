@@ -90,6 +90,9 @@ def _count_continuous(df):
     count_df = pd.DataFrame(columns=["start", "end"])
     while current_tail < (max(true_index)):
         start_index = true_index[true_index > current_tail][0]
+        if len(false_index[false_index > start_index]) == 0:
+            current_tail = max(max(true_index, false_index, key=max))
+            continue
         end_index = false_index[false_index > start_index][0]
         if df["eating_flag"].iloc[start_index:start_index + frame_threshold].sum() < frame_threshold:
             # 三点の距離が短い状況が長く続いていない場合
@@ -128,12 +131,13 @@ def calc_eat_duration(scene, mouse_data, threshold_frames=30, threshold_distance
     eating_frames = _count_continuous(distance_df)
     eating_frames = eating_frames[(eating_frames.end - eating_frames.start) > threshold_frames]
     eating_frames = eating_frames.assign(duration=(eating_frames.end - eating_frames.start)).reset_index()
+    os.makedirs(f"fig/{mouse_data['type']}", exist_ok=True)
     # plot
     eating_frames.duration.hist()
     plt.title(f"{mouse_data['no']} type:{mouse_data['type']} eat duration")
     plt.xlabel("frames")
     plt.ylabel("frequency")
-    plt.savefig(f"fig/{mouse_data['no']}_{mouse_data['type']}_eat_duration_hist.png")
+    plt.savefig(f"fig/{mouse_data['type']}/{mouse_data['no']}_{mouse_data['type']}_eat_duration_hist.png")
     plt.show()
     plt.close()
     return eating_frames
@@ -146,11 +150,12 @@ def calc_eat_interval(eat_duration_df, mouse_data):
     for i in eat_duration_df.index[:-1]:
         eat_interval = eat_interval.append(
             {"interval": (eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end)}, ignore_index=True)
+    os.makedirs(f"fig/{mouse_data['type']}", exist_ok=True)
     eat_interval.interval.hist()
     plt.title(f"{mouse_data['no']} type:{mouse_data['type']} eat interval")
     plt.xlabel("frames")
     plt.ylabel("frequency")
-    plt.savefig(f"fig/{mouse_data['no']}_{mouse_data['type']}_eat_interval_hist.png")
+    plt.savefig(f"fig/{mouse_data['type']}/{mouse_data['no']}_{mouse_data['type']}_eat_interval_hist.png")
     plt.show()
     plt.close()
     return eat_interval
@@ -190,19 +195,31 @@ def export_eat_duration_and_interval(files, params={}):
 
 
 def export_diff_wild_penk(wild_list, penk_list):
+    # TODO
+    #   ヒストグラムの算出
+    #   数値はフレーム数
+    #   グループごとの平均を出す
+    #   セッション/グループごとの平均
+    #
     # 平均
     col = ["duration_eat", "interval_eat", "duration_touch", "interval_touch"]
     wild = dict(zip(col, wild_list))
     penk = dict(zip(col, penk_list))
-    wild_list[0].mean(axis=0)
+    # wild_list[0].mean(axis=0)
+    # penk_list[0].mean(axis=0)
+    for data_type in col:
+        wild_current_data = wild[data_type]
+        penk_current_data = penk[data_type]
     # TODO 二群を検定する手法を考える
     ## 食べた回数に全体に対して検定
     ##
+    os.makedirs(f"fig/summary", exist_ok=True)
 
 
 def read_items(path):
     ret_val = {}
-    path_obj = pathlib.Path(path)
+    if isinstance(path, str):
+        path_obj = pathlib.Path(path)
     print(os.getcwd())
     print(path_obj)
     if path_obj.is_dir():
@@ -218,15 +235,19 @@ def read_items(path):
     return ret_val
 
 
+def read_px(file):
+    # TODO
+    #   60 or 30
+    #   1080p 720p
+    #   実時間/距離合計で
+    #   eat : 1s/100px in 720p
+    #   touch : 0.33s/100px in 720p
+    pass
+
+
 if __name__ == "__main__":
-    wild_file = {
-        "no2": "data/210617-no2DLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
-        "no3": "data/210617-no3DLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
-        "no4": "data/210617-no4shortDLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
-    }
-    penk_file = {
-        "penk": "data/210622-penkcaf_no3_1DLC_resnet50_guitest6-25shuffle1_400000_filtered.csv",
-    }
+    wild_file = "analyze/data/WT"
+    penk_file = "analyze/data/penk"
     wild_dfs = export_eat_duration_and_interval(wild_file)
     penk_dfs = export_eat_duration_and_interval(penk_file, {"eat_distances": 50, "touch_distances": 50})
     export_diff_wild_penk(wild_dfs, penk_dfs)
