@@ -25,7 +25,7 @@ import pathlib
 class FileIo:
     @staticmethod
     def read_csvfile(
-        file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv",
+            file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv",
     ):
         # make header
         dfcolumns = pd.read_csv(file_path, skiprows=1, nrows=2, header=None)
@@ -50,8 +50,6 @@ class FileIo:
         ret_val = {}
         if isinstance(path, str):
             path_obj = pathlib.Path(path)
-        print(os.getcwd())
-        print(path_obj)
         if path_obj.is_dir():
             print("is dir")
             files = list(path_obj.glob("**/*.csv"))
@@ -156,21 +154,21 @@ def _count_continuous(df):
         else:
             end_index = end_index[0]
         if (
-            df["eating_flag"].iloc[start_index : start_index + frame_threshold].sum()
-            < frame_threshold
+                df["eating_flag"].iloc[start_index: start_index + frame_threshold].sum()
+                < frame_threshold
         ):
             # 三点の距離が短い状況が長く続いていない場合
             # 分析上のノイズとして無視する
             current_tail = end_index
             continue
         while (
-            len(
-                false_index[
-                    (false_index >= end_index)
-                    & (false_index <= end_index + frame_threshold)
-                ]
-            )
-            < frame_threshold
+                len(
+                    false_index[
+                        (false_index >= end_index)
+                        & (false_index <= end_index + frame_threshold)
+                    ]
+                )
+                < frame_threshold
         ):
             end_index = false_index[false_index > end_index + 1]
             if end_index.empty:
@@ -194,11 +192,11 @@ def plot_cumlative_durations_and_intervals(data_list, params=None):
     else:
         group_name = "nogroup"
     for data_type, data in zip(
-        ["eat duration", "eat interval", "touch duration", "touch interval"], data_list
+            ["eat duration", "eat interval", "touch duration", "touch interval"], data_list
     ):
         raw_df = data.filter(["duration", "interval"])
         if not os.path.exists(
-            f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
+                f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
         ):
             os.makedirs(
                 f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
@@ -244,8 +242,8 @@ def plot_compare_graph_durations_and_intervals(data_lists, params, density=False
         range_max = max(
             [
                 data[data_types.index(data_type)]
-                .filter(["duration", "interval"])
-                .values.max()
+                    .filter(["duration", "interval"])
+                    .values.max()
                 for data in data_lists
             ]
         )
@@ -259,8 +257,8 @@ def plot_compare_graph_durations_and_intervals(data_lists, params, density=False
         for data_list, param in zip(data_lists, params):
             raw_df = (
                 data_list[data_types.index(data_type)]
-                .filter(["duration", "interval"])
-                .values
+                    .filter(["duration", "interval"])
+                    .values
             )
             if not raw_df.size:
                 continue
@@ -319,8 +317,8 @@ def plot_compare_graph_cumlative_durations_and_intervals(data_lists, params):
         range_max = max(
             [
                 data[data_types.index(data_type)]
-                .filter(["duration", "interval"])
-                .values.max()
+                    .filter(["duration", "interval"])
+                    .values.max()
                 for data in data_lists
             ]
         )
@@ -331,8 +329,8 @@ def plot_compare_graph_cumlative_durations_and_intervals(data_lists, params):
         for data_list, param in zip(data_lists, params):
             raw_df = (
                 data_list[data_types.index(data_type)]
-                .filter(["duration", "interval"])
-                .values
+                    .filter(["duration", "interval"])
+                    .values
             )
             if not raw_df.size:
                 continue
@@ -362,7 +360,7 @@ def plot_compare_graph_cumlative_durations_and_intervals(data_lists, params):
 
 
 def calc_eat_duration(
-    scene, mouse_data, threshold_frames=30, threshold_distance=150, num_of_mice=1
+        scene, mouse_data, threshold_frames=30, threshold_distance=150, num_of_mice=1
 ):
     target_parts = ["lefthand", "righthand", "mouth"]
     distance_df_dict = {}
@@ -379,7 +377,7 @@ def calc_eat_duration(
     eating_frames = _count_continuous(distance_df)
     eating_frames = eating_frames[
         (eating_frames.end - eating_frames.start) > threshold_frames
-    ]
+        ]
     eating_frames = eating_frames.assign(
         duration=(eating_frames.end - eating_frames.start) / 30
     ).reset_index()
@@ -388,11 +386,11 @@ def calc_eat_duration(
         return eating_frames
     # plot
     eating_frames_hist = (
-        pd.cut(
-            eating_frames.duration,
-            bins=np.arange(0, math.ceil(max(eating_frames.duration)), 0.5),
-        ).value_counts(sort=False)
-        / num_of_mice
+            pd.cut(
+                eating_frames.duration,
+                bins=np.arange(0, math.ceil(max(eating_frames.duration)), 0.5),
+            ).value_counts(sort=False)
+            / num_of_mice
     )
     eating_frames_hist.index = eating_frames_hist.index.categories.left
     plt.bar(
@@ -439,9 +437,9 @@ def calc_eat_interval(eat_duration_df, mouse_data, num_of_mice=1):
         eat_interval = eat_interval.append(
             {
                 "interval": (
-                    eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end
-                )
-                / 30
+                                    eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end
+                            )
+                            / 30
             },
             ignore_index=True,
         )
@@ -450,11 +448,11 @@ def calc_eat_interval(eat_duration_df, mouse_data, num_of_mice=1):
         return eat_interval
     # plot
     eat_interval_hist = (
-        pd.cut(
-            eat_interval.interval,
-            bins=np.arange(0, math.ceil(max(eat_interval.interval)), 0.5),
-        ).value_counts(sort=False)
-        / num_of_mice
+            pd.cut(
+                eat_interval.interval,
+                bins=np.arange(0, math.ceil(max(eat_interval.interval)), 0.5),
+            ).value_counts(sort=False)
+            / num_of_mice
     )
     eat_interval_hist.index = eat_interval_hist.index.categories.left
     plt.bar(
@@ -533,13 +531,13 @@ def export_eat_duration_and_interval(files, params=None):
         )
         # add to df
         if not duration_eat.empty:
-            df_duration_eat[no] = duration_eat.duration
+            df_duration_eat = df_duration_eat.append(duration_eat[["duration"]].assign(mouse_id=no))
         if not interval_eat.empty:
-            df_interval_eat[no] = interval_eat.interval
+            df_interval_eat = df_interval_eat.append(interval_eat[["interval"]].assign(mouse_id=no))
         if not duration_touch.empty:
-            df_duration_touch[no] = duration_touch.duration
+            df_duration_touch = df_duration_touch.append(duration_touch[["duration"]].assign(mouse_id=no))
         if not interval_touch.empty:
-            df_interval_touch[no] = interval_touch.interval
+            df_interval_touch = df_interval_touch.append(interval_touch[["interval"]].assign(mouse_id=no))
     return df_duration_eat, df_interval_eat, df_duration_touch, df_interval_touch
 
 
@@ -554,16 +552,39 @@ def export_diff_wild_penk(wild_list, penk_list):
     col = ["duration_eat", "interval_eat", "duration_touch", "interval_touch"]
     wild = dict(zip(col, wild_list))
     penk = dict(zip(col, penk_list))
+    os.makedirs(f"fig/summary", exist_ok=True)
     for data_type in col:
         wild_current_data = wild[data_type]
         penk_current_data = penk[data_type]
         ## in wild group
-        st.kruskal(*[data for data in wild_current_data.T.values], nan_policy="omit")
+        wild_st_result = st.kruskal(
+            *[wild_current_data.query('mouse_id == @data').filter(["duration", "interval"]).values.flatten() for data in
+              wild_current_data.mouse_id.unique()], nan_policy="omit")
         ## in penk group
-        st.kruskal(*[data for data in penk_current_data.T.values], nan_policy="omit")
+        penk_st_result = st.kruskal(
+            *[penk_current_data.query('mouse_id == @data').filter(["duration", "interval"]).values.flatten() for data in
+              penk_current_data.mouse_id.unique()], nan_policy="omit")
         ## both groups
-        st.mannwhitneyu(wild_current_data.mean(), penk_current_data.mean())
-    os.makedirs(f"fig/summary", exist_ok=True)
+        both_st_result = st.mannwhitneyu(wild_current_data.filter(["duration", "interval"]).values.flatten(),
+                                         penk_current_data.filter(["duration", "interval"]).values.flatten())
+
+        # plot
+        fig, ax = plt.subplots(1, 2)
+        ax[0].boxplot([wild_current_data.filter(["duration", "interval"]).values.flatten(),
+                       penk_current_data.filter(["duration", "interval"]).values.flatten()], labels=["wild", "penk"],
+                      sym="+")
+        ax[0].set_xlabel("type")
+        ax[0].set_ylabel("sec")
+        ax[0].set_title(f"{data_type}")
+        # 外れ値描画なし
+        ax[1].boxplot([wild_current_data.filter(["duration", "interval"]).values.flatten(),
+                       penk_current_data.filter(["duration", "interval"]).values.flatten()], labels=["wild", "penk"],
+                      sym="")
+        ax[1].set_xlabel("type")
+        ax[1].set_ylabel("sec")
+        ax[1].set_title(f"{data_type}")
+        plt.savefig(f"fig/summary/{data_type}_vsplot.png")
+        plt.close(fig)
 
 
 def export_analysed_data(data_list, group_name):
@@ -607,6 +628,8 @@ def read_px(file):
 
 if __name__ == "__main__":
     args = sys.argv
+    groupA_name = "pelet50_wild"
+    groupB_name = "pelet50_penk"
     wild_file = "analyze/data/WT"
     penk_file = "analyze/data/penk"
     wild_files = FileIo.read_items(wild_file)
@@ -622,54 +645,54 @@ if __name__ == "__main__":
                 joblib.delayed(export_eat_duration_and_interval)(
                     file,
                     {
-                        "group": f"pelet50-{type_name}",
+                        "group": f"{type_name}",
                         "eat_distances": 100,
                         "touch_distances": 100,
                     },
                 )
-                for file, type_name in zip([wild_file, penk_file], ["wild", "penk"])
+                for file, type_name in zip([wild_file, penk_file], [groupA_name, groupB_name])
             ]
         )
         # wild_dfs = export_eat_duration_and_interval(
         #     wild_file,
-        #     {"group": "pelet50-wild", "eat_distances": 100, "touch_distances": 100},
+        #     {"group": groupA_name, "eat_distances": 100, "touch_distances": 100},
         # )
         # penk_dfs = export_eat_duration_and_interval(
         #     penk_file,
-        #     {"group": "pelet50-penk", "eat_distances": 100, "touch_distances": 100},
+        #     {"group": groupB_name, "eat_distances": 100, "touch_distances": 100},
         # )
 
-        # plot_cumlative_durations_and_intervals(wild_dfs, {"group": "pelet50-wild"})
-        # plot_cumlative_durations_and_intervals(penk_dfs, {"group": "pelet50-penk"})
+        # plot_cumlative_durations_and_intervals(wild_dfs, {"group": groupA_name})
+        # plot_cumlative_durations_and_intervals(penk_dfs, {"group": groupB_name})
         # joblib.Parallel(n_jobs=-2, verbose=2)(
         #     [
         #         joblib.delayed(plot_cumlative_durations_and_intervals)(
-        #             wild_dfs, {"group": "pelet50-wild", "mouse_id": no}
+        #             wild_dfs, {"group": groupA_name, "mouse_id": no}
         #         )
         #         for no in wild_files.keys()
         #     ]
         #     + [
         #         joblib.delayed(plot_cumlative_durations_and_intervals)(
-        #             penk_dfs, {"group": "pelet50-penk", "mouse_id": no}
+        #             penk_dfs, {"group": groupB_name, "mouse_id": no}
         #         )
         #         for no in penk_files.keys()
         #     ]
         #     + [
         #         joblib.delayed(plot_compare_graph_cumlative_durations_and_intervals)(
         #             [wild_dfs, penk_dfs],
-        #             [{"group": "pelet50-wild"}, {"group": "pelet50-penk"}],
+        #             [{"group": groupA_name}, {"group": groupB_name}],
         #         )
         #     ]
         #     + [
         #         joblib.delayed(plot_compare_graph_durations_and_intervals)(
         #             [wild_dfs, penk_dfs],
-        #             [{"group": "pelet50-wild"}, {"group": "pelet50-penk"}],
+        #             [{"group": groupA_name}, {"group": groupB_name}],
         #         )
         #     ]
         #     + [
         #         joblib.delayed(plot_compare_graph_durations_and_intervals)(
         #             [wild_dfs, penk_dfs],
-        #             [{"group": "pelet50-wild"}, {"group": "pelet50-penk"}],
+        #             [{"group": groupA_name}, {"group": groupB_name}],
         #             density=True,
         #         )
         #     ]
@@ -678,29 +701,29 @@ if __name__ == "__main__":
         # joblib.Parallel(n_jobs=-2, verbose=2)(
         #     [
         #         joblib.delayed(plot_cumlative_durations_and_intervals)(
-        #             penk_dfs, {"group": "pelet50-penk", "mouse_id": no}
+        #             penk_dfs, {"group": groupB_name, "mouse_id": no}
         #         )
         #         for no in penk_files.keys()
         #     ]
         # )
-        for no in wild_files.keys():
-            plot_cumlative_durations_and_intervals(
-                wild_dfs, {"group": "pelet50-wild", "mouse_id": no}
-            )
-        for no in penk_files.keys():
-            plot_cumlative_durations_and_intervals(
-                penk_dfs, {"group": "pelet50-penk", "mouse_id": no}
-            )
-
-        plot_compare_graph_cumlative_durations_and_intervals(
-            [wild_dfs, penk_dfs], [{"group": "pelet50-wild"}, {"group": "pelet50-penk"}]
-        )
+        # for no in wild_files.keys():
+        #     plot_cumlative_durations_and_intervals(
+        #         wild_dfs, {"group": groupA_name, "mouse_id": no}
+        #     )
+        # for no in penk_files.keys():
+        #     plot_cumlative_durations_and_intervals(
+        #         penk_dfs, {"group": groupB_name, "mouse_id": no}
+        #     )
+        #
+        # plot_compare_graph_cumlative_durations_and_intervals(
+        #     [wild_dfs, penk_dfs], [{"group": groupA_name}, {"group": groupB_name}]
+        # )
         plot_compare_graph_durations_and_intervals(
-            [wild_dfs, penk_dfs], [{"group": "pelet50-wild"}, {"group": "pelet50-penk"}]
+            [wild_dfs, penk_dfs], [{"group": groupA_name}, {"group": groupB_name}]
         )
         plot_compare_graph_durations_and_intervals(
             [wild_dfs, penk_dfs],
-            [{"group": "pelet50-wild"}, {"group": "pelet50-penk"}],
+            [{"group": groupA_name}, {"group": groupB_name}],
             density=True,
         )
         export_diff_wild_penk(wild_dfs, penk_dfs)
