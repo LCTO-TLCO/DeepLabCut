@@ -22,7 +22,7 @@ import pathlib
 class FileIo:
     @staticmethod
     def read_csvfile(
-            file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv",
+        file_path=r"data/210617-no2DLC_resnet101_guitest6-25shuffle1_50000.csv",
     ):
         # make header
         dfcolumns = pd.read_csv(file_path, skiprows=1, nrows=2, header=None)
@@ -150,11 +150,11 @@ class Data(object):
         elif mouse_data["type"] == "touch":
             data = self.duration_touch
         eating_frames_hist = (
-                pd.cut(
-                    data.duration,
-                    bins=np.arange(0, math.ceil(max(data.duration)), 0.5),
-                ).value_counts(sort=False)
-                / self.num_of_mice
+            pd.cut(
+                data.duration,
+                bins=np.arange(0, math.ceil(max(data.duration)), 0.5),
+            ).value_counts(sort=False)
+            / self.num_of_mice
         )
         eating_frames_hist.index = eating_frames_hist.index.categories.left
         plt.bar(
@@ -200,11 +200,11 @@ class Data(object):
         elif mouse_data["type"] == "touch":
             data = self.interval_touch
         eat_interval_hist = (
-                pd.cut(
-                    data.interval,
-                    bins=np.arange(0, math.ceil(max(data.interval)), 0.5),
-                ).value_counts(sort=False)
-                / self.num_of_mice
+            pd.cut(
+                data.interval,
+                bins=np.arange(0, math.ceil(max(data.interval)), 0.5),
+            ).value_counts(sort=False)
+            / self.num_of_mice
         )
         eat_interval_hist.index = eat_interval_hist.index.categories.left
         plt.bar(
@@ -229,9 +229,7 @@ class Data(object):
             linewidth=1,
             label="Median: {:.2f}".format(data.interval.median()),
         )
-        plt.title(
-            f"{self.group_name}:type:{mouse_data['type']} eat interval"
-        )
+        plt.title(f"{self.group_name}:type:{mouse_data['type']} eat interval")
         plt.xlabel("Time[s]")
         plt.ylabel("frequency")
         plt.legend(bbox_to_anchor=(1.05, 0.0), loc="lower left")
@@ -303,7 +301,7 @@ class MouseData(Data):
 
     @staticmethod
     def calc_eat_duration(
-            scene, mouse_data, threshold_frames=30, threshold_distance=150, num_of_mice=1
+        scene, mouse_data, threshold_frames=30, threshold_distance=150, num_of_mice=1
     ):
         target_parts = ["lefthand", "righthand", "mouth"]
         distance_df_dict = {}
@@ -320,7 +318,7 @@ class MouseData(Data):
         eating_frames = calc._count_continuous(distance_df)
         eating_frames = eating_frames[
             (eating_frames.end - eating_frames.start) > threshold_frames
-            ]
+        ]
         eating_frames = eating_frames.assign(
             duration=(eating_frames.end - eating_frames.start) / 30
         ).reset_index()
@@ -337,7 +335,11 @@ class MouseData(Data):
         for i in eat_duration_df.index[:-1]:
             eat_interval = eat_interval.append(
                 {
-                    "interval": (eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end) / 30},
+                    "interval": (
+                        eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end
+                    )
+                    / 30
+                },
                 ignore_index=True,
             )
         eat_interval = eat_interval.assign(mouse_id=mouse_data["no"])
@@ -355,8 +357,12 @@ class MouseData(Data):
             # all_stats,
         ) = data_list
         os.makedirs(f"data/export/{group_name}", exist_ok=True)
-        df_duration_eat.to_csv(f"data/export/{group_name}/individual_data_duration_eat.csv")
-        df_interval_eat.to_csv(f"data/export/{group_name}/individual_data_interval_eat.csv")
+        df_duration_eat.to_csv(
+            f"data/export/{group_name}/individual_data_duration_eat.csv"
+        )
+        df_interval_eat.to_csv(
+            f"data/export/{group_name}/individual_data_interval_eat.csv"
+        )
         df_duration_touch.to_csv(
             f"data/export/{group_name}/individual_data_duration_touch.csv"
         )
@@ -374,11 +380,12 @@ class MouseData(Data):
         else:
             group_name = "nogroup"
         for data_type, data in zip(
-                ["eat duration", "eat interval", "touch duration", "touch interval"], data_list
+            ["eat duration", "eat interval", "touch duration", "touch interval"],
+            data_list,
         ):
             raw_df = data.filter(["duration", "interval"])
             if not os.path.exists(
-                    f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
+                f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
             ):
                 os.makedirs(
                     f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
@@ -443,23 +450,49 @@ class MouseGroup(Data):
 
         # or normal
         for no, path in paths.items():
-            mice_data = MouseData(files=path, params=params, group_name=self.group_name, no=no)
+            mice_data = MouseData(
+                files=path, params=params, group_name=self.group_name, no=no
+            )
             self.mice_data = {**self.mice_data, no: mice_data}
             self.mouse_id.append(no)
             # add to df
             if not mice_data.duration_eat.empty:
-                df_duration_eat = df_duration_eat.append(mice_data.duration_eat[["duration"]].assign(mouse_id=no))
+                df_duration_eat = df_duration_eat.append(
+                    mice_data.duration_eat[["duration"]].assign(mouse_id=no)
+                )
             if not mice_data.interval_eat.empty:
-                df_interval_eat = df_interval_eat.append(mice_data.interval_eat[["interval"]].assign(mouse_id=no))
+                df_interval_eat = df_interval_eat.append(
+                    mice_data.interval_eat[["interval"]].assign(mouse_id=no)
+                )
             if not mice_data.duration_touch.empty:
-                df_duration_touch = df_duration_touch.append(mice_data.duration_touch[["duration"]].assign(mouse_id=no))
+                df_duration_touch = df_duration_touch.append(
+                    mice_data.duration_touch[["duration"]].assign(mouse_id=no)
+                )
             if not mice_data.interval_touch.empty:
-                df_interval_touch = df_interval_touch.append(mice_data.interval_touch[["interval"]].assign(mouse_id=no))
+                df_interval_touch = df_interval_touch.append(
+                    mice_data.interval_touch[["interval"]].assign(mouse_id=no)
+                )
 
         self.duration_eat = df_duration_eat.copy()
         self.interval_eat = df_interval_eat.copy()
         self.duration_touch = df_duration_touch.copy()
         self.interval_touch = df_interval_touch.copy()
+
+    def summary(self):
+        # TODO
+        #   export csv
+        #   mean
+        #   median
+        #   mode
+        def calc_stats(data):
+            med = np.median(data)
+            mode = st.mode(data)
+            mean = np.mean()
+            return pd.DataFrame([mean, mode, med], columns=["mean", "mode", "median"])
+
+        col = ["duration_eat", "interval_eat", "duration_touch", "interval_touch"]
+        for data_type in col:
+            data = getattr(self, data_type)
 
     def plot_all(self):
         self.plot_eat_duration({"type": "eat"})
@@ -470,18 +503,19 @@ class MouseGroup(Data):
     def export_analysed_data(self):
         # TODO
         #   export csv
-        #   mean
-        #   median
-        #   mode
         os.makedirs(f"data/export/{self.group_name}", exist_ok=True)
 
-        self.duration_eat.to_csv(f"data/export/{self.group_name}/individual_data_duration_eat.csv")
-        self.interval_eat.to_csv(f"data/export/{self.group_name}/individual_data_interval_eat.csv")
+        self.duration_eat.to_csv(
+            f"data/export/{self.group_name}/{self.group_name}_individual_data_duration_eat.csv"
+        )
+        self.interval_eat.to_csv(
+            f"data/export/{self.group_name}/{self.group_name}_individual_data_interval_eat.csv"
+        )
         self.duration_touch.to_csv(
-            f"data/export/{self.group_name}/individual_data_duration_touch.csv"
+            f"data/export/{self.group_name}/{self.group_name}_individual_data_duration_touch.csv"
         )
         self.interval_touch.to_csv(
-            f"data/export/{self.group_name}/individual_data_interval_touch.csv"
+            f"data/export/{self.group_name}/{self.group_name}_individual_data_interval_touch.csv"
         )
         # all_stats.to_csv(f"data/export/{self.group_name}/all_stats.csv")
 
@@ -593,8 +627,12 @@ class GroupCompare:
 
         # 平均
         col = ["duration eat", "interval eat", "duration touch", "interval touch"]
-        groupA_dict = dict(zip(col, [getattr(self.groups[0], name.replace(' ', '_')) for name in col]))
-        groupB_dict = dict(zip(col, [getattr(self.groups[1], name.replace(' ', '_')) for name in col]))
+        groupA_dict = dict(
+            zip(col, [getattr(self.groups[0], name.replace(" ", "_")) for name in col])
+        )
+        groupB_dict = dict(
+            zip(col, [getattr(self.groups[1], name.replace(" ", "_")) for name in col])
+        )
         groupA_name = self.groups[0].group_name
         groupB_name = self.groups[1].group_name
         groups = "-".join([groupA_name, groupB_name])
@@ -605,17 +643,29 @@ class GroupCompare:
             groupB_current_data = groupB_dict[data_type]
             ## in wild group
             groupA_st_result = st.kruskal(
-                *[groupA_current_data.query('mouse_id == @data').filter(["duration", "interval"]).values.flatten() for
-                  data in
-                  groupA_current_data.mouse_id.unique()], nan_policy="omit")
+                *[
+                    groupA_current_data.query("mouse_id == @data")
+                    .filter(["duration", "interval"])
+                    .values.flatten()
+                    for data in groupA_current_data.mouse_id.unique()
+                ],
+                nan_policy="omit",
+            )
             ## in penk group
             groupB_st_result = st.kruskal(
-                *[groupB_current_data.query('mouse_id == @data').filter(["duration", "interval"]).values.flatten() for
-                  data in
-                  groupB_current_data.mouse_id.unique()], nan_policy="omit")
+                *[
+                    groupB_current_data.query("mouse_id == @data")
+                    .filter(["duration", "interval"])
+                    .values.flatten()
+                    for data in groupB_current_data.mouse_id.unique()
+                ],
+                nan_policy="omit",
+            )
             ## both groups
-            both_st_result = st.mannwhitneyu(groupA_current_data.filter(["duration", "interval"]).values.flatten(),
-                                             groupB_current_data.filter(["duration", "interval"]).values.flatten())
+            both_st_result = st.mannwhitneyu(
+                groupA_current_data.filter(["duration", "interval"]).values.flatten(),
+                groupB_current_data.filter(["duration", "interval"]).values.flatten(),
+            )
 
             # TODO
             #  export stats
@@ -623,23 +673,41 @@ class GroupCompare:
 
             # plot
             fig, ax = plt.subplots(1, 2)
-            ax[0].boxplot([groupA_current_data.filter(["duration", "interval"]).values.flatten(),
-                           groupB_current_data.filter(["duration", "interval"]).values.flatten()],
-                          labels=["wild", "penk"],
-                          sym="+")
+            ax[0].boxplot(
+                [
+                    groupA_current_data.filter(
+                        ["duration", "interval"]
+                    ).values.flatten(),
+                    groupB_current_data.filter(
+                        ["duration", "interval"]
+                    ).values.flatten(),
+                ],
+                labels=["wild", "penk"],
+                sym="+",
+            )
             ax[0].set_xlabel("type")
             ax[0].set_ylabel("sec")
             ax[0].set_title(f"{data_type}")
             # 外れ値描画なし
-            ax[1].boxplot([groupA_current_data.filter(["duration", "interval"]).values.flatten(),
-                           groupB_current_data.filter(["duration", "interval"]).values.flatten()],
-                          # whis=[5, 95],
-                          labels=["wild", "penk"],
-                          sym="")
+            ax[1].boxplot(
+                [
+                    groupA_current_data.filter(
+                        ["duration", "interval"]
+                    ).values.flatten(),
+                    groupB_current_data.filter(
+                        ["duration", "interval"]
+                    ).values.flatten(),
+                ],
+                # whis=[5, 95],
+                labels=["wild", "penk"],
+                sym="",
+            )
             ax[1].set_xlabel("type")
             ax[1].set_ylabel("sec")
             ax[1].set_title(f"{data_type}")
-            plt.savefig(f"fig/{groups}/summary/{data_type.replace(' ', '_')}_vsboxplot.png")
+            plt.savefig(
+                f"fig/{groups}/summary/{data_type.replace(' ', '_')}_vsboxplot.png"
+            )
             plt.close(fig)
 
     def plot_compare_graph_durations_and_intervals(self, density=False):
@@ -648,7 +716,12 @@ class GroupCompare:
                                 プロット対象データを個体の確率の平均にする
                                 Falseの場合すべてのマウスのデータを一緒くたにし純粋な個数を個体数で割って平均を算出
         """
-        data_types = ["duration eat", "interval eat", "duration touch", "interval touch"]
+        data_types = [
+            "duration eat",
+            "interval eat",
+            "duration touch",
+            "interval touch",
+        ]
 
         groups = "-".join([self.groups[i].group_name for i in range(len(self.groups))])
 
@@ -659,8 +732,8 @@ class GroupCompare:
             range_max = max(
                 [
                     getattr(data, data_type.replace(" ", "_"))
-                        .filter(["duration", "interval"])
-                        .values.max()
+                    .filter(["duration", "interval"])
+                    .values.max()
                     for data in self.groups
                 ]
             )
@@ -674,15 +747,17 @@ class GroupCompare:
             for data_list in self.groups:
                 raw_df = (
                     getattr(data_list, data_type.replace(" ", "_"))
-                        .filter(["duration", "interval"])
-                        .values
+                    .filter(["duration", "interval"])
+                    .values
                 )
                 if not raw_df.size:
                     continue
                 # duration or interval
                 if density:
                     hist_dfs = []
-                    for mouse in getattr(data_list, data_type.replace(" ", "_")).mouse_id.unique():
+                    for mouse in getattr(
+                        data_list, data_type.replace(" ", "_")
+                    ).mouse_id.unique():
                         data = getattr(data_list, data_type.replace(" ", "_"))
                         data = data[data.mouse_id.isin([mouse])].filter(
                             ["duration", "interval"]
@@ -692,7 +767,11 @@ class GroupCompare:
                         )
                     hist_df = np.mean(hist_dfs, axis=0)
                 else:
-                    n = getattr(data_list, data_type.replace(" ", "_")).mouse_id.unique().size
+                    n = (
+                        getattr(data_list, data_type.replace(" ", "_"))
+                        .mouse_id.unique()
+                        .size
+                    )
                     hist_df = np.histogram(raw_df, range=ranges, bins=bins)
                     hist_df = hist_df[0] / n
                 if idx.size != hist_df.size:
@@ -724,7 +803,12 @@ class GroupCompare:
             plt.close()
 
     def plot_compare_graph_cumlative_durations_and_intervals(self):
-        data_types = ["duration eat", "interval eat", "duration touch", "interval touch"]
+        data_types = [
+            "duration eat",
+            "interval eat",
+            "duration touch",
+            "interval touch",
+        ]
         groups = "-".join([self.groups[i].group_name for i in range(len(self.groups))])
 
         if not os.path.exists(f"fig/{groups}/compare_cumlative"):
@@ -734,8 +818,8 @@ class GroupCompare:
             range_max = max(
                 [
                     getattr(data, data_type.replace(" ", "_"))
-                        .filter(["duration", "interval"])
-                        .values.max()
+                    .filter(["duration", "interval"])
+                    .values.max()
                     for data in self.groups
                 ]
             )
@@ -749,8 +833,8 @@ class GroupCompare:
             for data_list in self.groups:
                 raw_df = (
                     getattr(data_list, data_type.replace(" ", "_"))
-                        .filter(["duration", "interval"])
-                        .values
+                    .filter(["duration", "interval"])
+                    .values
                 )
                 if not raw_df.size:
                     continue
@@ -786,10 +870,9 @@ class GroupCompare:
 
 
 class calc:
-
     @staticmethod
     def calc_eat_duration(
-            scene, mouse_data, threshold_frames=30, threshold_distance=150, num_of_mice=1
+        scene, mouse_data, threshold_frames=30, threshold_distance=150, num_of_mice=1
     ):
         target_parts = ["lefthand", "righthand", "mouth"]
         distance_df_dict = {}
@@ -806,7 +889,7 @@ class calc:
         eating_frames = calc._count_continuous(distance_df)
         eating_frames = eating_frames[
             (eating_frames.end - eating_frames.start) > threshold_frames
-            ]
+        ]
         eating_frames = eating_frames.assign(
             duration=(eating_frames.end - eating_frames.start) / 30
         ).reset_index()
@@ -815,11 +898,11 @@ class calc:
             return eating_frames
         # plot
         eating_frames_hist = (
-                pd.cut(
-                    eating_frames.duration,
-                    bins=np.arange(0, math.ceil(max(eating_frames.duration)), 0.5),
-                ).value_counts(sort=False)
-                / num_of_mice
+            pd.cut(
+                eating_frames.duration,
+                bins=np.arange(0, math.ceil(max(eating_frames.duration)), 0.5),
+            ).value_counts(sort=False)
+            / num_of_mice
         )
         eating_frames_hist.index = eating_frames_hist.index.categories.left
         plt.bar(
@@ -866,9 +949,9 @@ class calc:
             eat_interval = eat_interval.append(
                 {
                     "interval": (
-                                        eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end
-                                )
-                                / 30
+                        eat_duration_df.iloc[i + 1].start - eat_duration_df.iloc[i].end
+                    )
+                    / 30
                 },
                 ignore_index=True,
             )
@@ -877,11 +960,11 @@ class calc:
             return eat_interval
         # plot
         eat_interval_hist = (
-                pd.cut(
-                    eat_interval.interval,
-                    bins=np.arange(0, math.ceil(max(eat_interval.interval)), 0.5),
-                ).value_counts(sort=False)
-                / num_of_mice
+            pd.cut(
+                eat_interval.interval,
+                bins=np.arange(0, math.ceil(max(eat_interval.interval)), 0.5),
+            ).value_counts(sort=False)
+            / num_of_mice
         )
         eat_interval_hist.index = eat_interval_hist.index.categories.left
         plt.bar(
@@ -960,13 +1043,21 @@ class calc:
             )
             # add to df
             if not duration_eat.empty:
-                df_duration_eat = df_duration_eat.append(duration_eat[["duration"]].assign(mouse_id=no))
+                df_duration_eat = df_duration_eat.append(
+                    duration_eat[["duration"]].assign(mouse_id=no)
+                )
             if not interval_eat.empty:
-                df_interval_eat = df_interval_eat.append(interval_eat[["interval"]].assign(mouse_id=no))
+                df_interval_eat = df_interval_eat.append(
+                    interval_eat[["interval"]].assign(mouse_id=no)
+                )
             if not duration_touch.empty:
-                df_duration_touch = df_duration_touch.append(duration_touch[["duration"]].assign(mouse_id=no))
+                df_duration_touch = df_duration_touch.append(
+                    duration_touch[["duration"]].assign(mouse_id=no)
+                )
             if not interval_touch.empty:
-                df_interval_touch = df_interval_touch.append(interval_touch[["interval"]].assign(mouse_id=no))
+                df_interval_touch = df_interval_touch.append(
+                    interval_touch[["interval"]].assign(mouse_id=no)
+                )
         return df_duration_eat, df_interval_eat, df_duration_touch, df_interval_touch
 
     @staticmethod
@@ -990,33 +1081,53 @@ class calc:
             penk_current_data = penk[data_type]
             ## in wild group
             wild_st_result = st.kruskal(
-                *[wild_current_data.query('mouse_id == @data').filter(["duration", "interval"]).values.flatten() for
-                  data in
-                  wild_current_data.mouse_id.unique()], nan_policy="omit")
+                *[
+                    wild_current_data.query("mouse_id == @data")
+                    .filter(["duration", "interval"])
+                    .values.flatten()
+                    for data in wild_current_data.mouse_id.unique()
+                ],
+                nan_policy="omit",
+            )
             ## in penk group
             penk_st_result = st.kruskal(
-                *[penk_current_data.query('mouse_id == @data').filter(["duration", "interval"]).values.flatten() for
-                  data in
-                  penk_current_data.mouse_id.unique()], nan_policy="omit")
+                *[
+                    penk_current_data.query("mouse_id == @data")
+                    .filter(["duration", "interval"])
+                    .values.flatten()
+                    for data in penk_current_data.mouse_id.unique()
+                ],
+                nan_policy="omit",
+            )
             ## both groups
-            both_st_result = st.mannwhitneyu(wild_current_data.filter(["duration", "interval"]).values.flatten(),
-                                             penk_current_data.filter(["duration", "interval"]).values.flatten())
+            both_st_result = st.mannwhitneyu(
+                wild_current_data.filter(["duration", "interval"]).values.flatten(),
+                penk_current_data.filter(["duration", "interval"]).values.flatten(),
+            )
 
             # plot
             fig, ax = plt.subplots(1, 2)
-            ax[0].boxplot([wild_current_data.filter(["duration", "interval"]).values.flatten(),
-                           penk_current_data.filter(["duration", "interval"]).values.flatten()],
-                          labels=["wild", "penk"],
-                          sym="+")
+            ax[0].boxplot(
+                [
+                    wild_current_data.filter(["duration", "interval"]).values.flatten(),
+                    penk_current_data.filter(["duration", "interval"]).values.flatten(),
+                ],
+                labels=["wild", "penk"],
+                sym="+",
+            )
             ax[0].set_xlabel("type")
             ax[0].set_ylabel("sec")
             ax[0].set_title(f"{data_type}")
             # 外れ値描画なし
-            ax[1].boxplot([wild_current_data.filter(["duration", "interval"]).values.flatten(),
-                           penk_current_data.filter(["duration", "interval"]).values.flatten()],
-                          # whis=[5, 95],
-                          labels=["wild", "penk"],
-                          sym="")
+            ax[1].boxplot(
+                [
+                    wild_current_data.filter(["duration", "interval"]).values.flatten(),
+                    penk_current_data.filter(["duration", "interval"]).values.flatten(),
+                ],
+                # whis=[5, 95],
+                labels=["wild", "penk"],
+                sym="",
+            )
             ax[1].set_xlabel("type")
             ax[1].set_ylabel("sec")
             ax[1].set_title(f"{data_type}")
@@ -1033,8 +1144,12 @@ class calc:
             # all_stats,
         ) = data_list
         os.makedirs(f"data/export/{group_name}", exist_ok=True)
-        df_duration_eat.to_csv(f"data/export/{group_name}/individual_data_duration_eat.csv")
-        df_interval_eat.to_csv(f"data/export/{group_name}/individual_data_interval_eat.csv")
+        df_duration_eat.to_csv(
+            f"data/export/{group_name}/individual_data_duration_eat.csv"
+        )
+        df_interval_eat.to_csv(
+            f"data/export/{group_name}/individual_data_interval_eat.csv"
+        )
         df_duration_touch.to_csv(
             f"data/export/{group_name}/individual_data_duration_touch.csv"
         )
@@ -1087,21 +1202,23 @@ class calc:
             else:
                 end_index = end_index[0]
             if (
-                    df["eating_flag"].iloc[start_index: start_index + frame_threshold].sum()
-                    < frame_threshold
+                df["eating_flag"]
+                .iloc[start_index : start_index + frame_threshold]
+                .sum()
+                < frame_threshold
             ):
                 # 三点の距離が短い状況が長く続いていない場合
                 # 分析上のノイズとして無視する
                 current_tail = end_index
                 continue
             while (
-                    len(
-                        false_index[
-                            (false_index >= end_index)
-                            & (false_index <= end_index + frame_threshold)
-                        ]
-                    )
-                    < frame_threshold
+                len(
+                    false_index[
+                        (false_index >= end_index)
+                        & (false_index <= end_index + frame_threshold)
+                    ]
+                )
+                < frame_threshold
             ):
                 end_index = false_index[false_index > end_index + 1]
                 if end_index.empty:
@@ -1118,7 +1235,6 @@ class calc:
 
 
 class plot:
-
     @staticmethod
     def plot_cumlative_durations_and_intervals(data_list, params=None):
         if params is None:
@@ -1128,11 +1244,12 @@ class plot:
         else:
             group_name = "nogroup"
         for data_type, data in zip(
-                ["eat duration", "eat interval", "touch duration", "touch interval"], data_list
+            ["eat duration", "eat interval", "touch duration", "touch interval"],
+            data_list,
         ):
             raw_df = data.filter(["duration", "interval"])
             if not os.path.exists(
-                    f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
+                f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
             ):
                 os.makedirs(
                     f"fig/{group_name}/duration_or_interval_cumlative/{params.get('mouse_id', 'allmice')}"
@@ -1168,7 +1285,12 @@ class plot:
                                 プロット対象データを個体の確率の平均にする
                                 Falseの場合すべてのマウスのデータを一緒くたにし純粋な個数を個体数で割って平均を算出
         """
-        data_types = ["eat duration", "eat interval", "touch duration", "touch interval"]
+        data_types = [
+            "eat duration",
+            "eat interval",
+            "touch duration",
+            "touch interval",
+        ]
         groups = "-".join([param.get("group", "noname_group") for param in params])
 
         for data_type in data_types:
@@ -1178,8 +1300,8 @@ class plot:
             range_max = max(
                 [
                     data[data_types.index(data_type)]
-                        .filter(["duration", "interval"])
-                        .values.max()
+                    .filter(["duration", "interval"])
+                    .values.max()
                     for data in data_lists
                 ]
             )
@@ -1193,15 +1315,17 @@ class plot:
             for data_list, param in zip(data_lists, params):
                 raw_df = (
                     data_list[data_types.index(data_type)]
-                        .filter(["duration", "interval"])
-                        .values
+                    .filter(["duration", "interval"])
+                    .values
                 )
                 if not raw_df.size:
                     continue
                 # duration or interval
                 if density:
                     hist_dfs = []
-                    for mouse in data_list[data_types.index(data_type)].mouse_id.unique():
+                    for mouse in data_list[
+                        data_types.index(data_type)
+                    ].mouse_id.unique():
                         data = data_list[data_types.index(data_type)]
                         data = data[data.mouse_id.isin([mouse])].filter(
                             ["duration", "interval"]
@@ -1244,7 +1368,12 @@ class plot:
 
     @staticmethod
     def plot_compare_graph_cumlative_durations_and_intervals(data_lists, params):
-        data_types = ["eat duration", "eat interval", "touch duration", "touch interval"]
+        data_types = [
+            "eat duration",
+            "eat interval",
+            "touch duration",
+            "touch interval",
+        ]
         groups = "-".join([param.get("group", "noname_group") for param in params])
         if not os.path.exists(f"fig/{groups}/compare_cumlative"):
             os.makedirs(f"fig/{groups}/compare_cumlative")
@@ -1253,8 +1382,8 @@ class plot:
             range_max = max(
                 [
                     data[data_types.index(data_type)]
-                        .filter(["duration", "interval"])
-                        .values.max()
+                    .filter(["duration", "interval"])
+                    .values.max()
                     for data in data_lists
                 ]
             )
@@ -1268,8 +1397,8 @@ class plot:
             for data_list, param in zip(data_lists, params):
                 raw_df = (
                     data_list[data_types.index(data_type)]
-                        .filter(["duration", "interval"])
-                        .values
+                    .filter(["duration", "interval"])
+                    .values
                 )
                 if not raw_df.size:
                     continue
@@ -1304,17 +1433,23 @@ def run_jobs_parallel(jobs):
 
 if __name__ == "__main__":
     args = sys.argv
-    groupA_name = "pelet50_wild"
-    groupB_name = "pelet50_penk"
-    wild_file = "analyze/data/WT"
-    penk_file = "analyze/data/penk"
-    wild_file = "analyze/data/WT_test"
-    penk_file = "analyze/data/penk_test"
-    wild_files = FileIo.read_items(wild_file)
-    penk_files = FileIo.read_items(penk_file)
-    # wild_dfs = export_eat_duration_and_interval(wild_file)
-    # penk_dfs = export_eat_duration_and_interval(penk_file, {"eat_distances": 50, "touch_distances": 50})
-    # export_diff_wild_penk(wild_dfs, penk_dfs)
+
+    groupA_name = "WT_FAT"
+    groupB_name = "WT_normal"
+    groupc_name = "WT_FAT"
+    groupD_name = "WT_normal"
+
+    groupA_file = "analyze/data/WT/FAT"
+    groupB_file = "analyze/data/WT/normal"
+    groupC_file = "analyze/data/penk/FAT"
+    groupD_file = "analyze/data/penk/normal"
+
+    groupA_files = FileIo.read_items(groupA_file)
+    groupB_files = FileIo.read_items(groupB_file)
+    groupC_files = FileIo.read_items(groupC_file)
+    groupD_files = FileIo.read_items(groupD_file)
+
+
     if False:
         # if len(args) <= 1:
         # 一例として距離が60pxくらい
@@ -1330,7 +1465,9 @@ if __name__ == "__main__":
                         "touch_distances": 50,
                     },
                 )
-                for file, type_name in zip([wild_file, penk_file], [groupA_name, groupB_name])
+                for file, type_name in zip(
+                    [wild_file, penk_file], [groupA_name, groupB_name]
+                )
             ]
         )
         # wild_dfs = export_eat_duration_and_interval(
@@ -1376,10 +1513,16 @@ if __name__ == "__main__":
                     density=True,
                 )
             ]
-            + [joblib.delayed(export_diff_wild_penk)([wild_dfs, penk_dfs],
-                                                     [{"group": groupA_name}, {"group": groupB_name}])]
-            + [joblib.delayed(export_analysed_data)(data, name) for data, name in
-               zip([wild_dfs, penk_dfs], [groupA_name, groupB_name])]
+            + [
+                joblib.delayed(export_diff_wild_penk)(
+                    [wild_dfs, penk_dfs],
+                    [{"group": groupA_name}, {"group": groupB_name}],
+                )
+            ]
+            + [
+                joblib.delayed(export_analysed_data)(data, name)
+                for data, name in zip([wild_dfs, penk_dfs], [groupA_name, groupB_name])
+            ]
             # + [joblib.delayed()()]
         )
 
@@ -1427,22 +1570,28 @@ if __name__ == "__main__":
         # Class debug
         # TODO
         #   グループ名指定を柔軟にする
-        #
-        wild_data = MouseGroup(wild_file, {
-            "group": f"{groupA_name}",
-            "eat_frames": 60,
-            "touch_frames": 20,
-            "eat_distances": 50,
-            "touch_distances": 50,
-        })
-        penk_data = MouseGroup(penk_file, {
-            "group": f"{groupB_name}",
-            "eat_frames": 60,
-            "touch_frames": 20,
-            "eat_distances": 50,
-            "touch_distances": 50,
-        })
-        compare_groups = GroupCompare([wild_data, penk_data])
+
+        groupA_data = MouseGroup(
+            groupA_file,
+            {
+                "group": f"{groupA_name}",
+                "eat_frames": 60,
+                "touch_frames": 20,
+                "eat_distances": 50,
+                "touch_distances": 50,
+            },
+        )
+        groupB_data = MouseGroup(
+            groupB_file,
+            {
+                "group": f"{groupB_name}",
+                "eat_frames": 60,
+                "touch_frames": 20,
+                "eat_distances": 50,
+                "touch_distances": 50,
+            },
+        )
+        compare_groups = GroupCompare([groupA_data, groupB_data])
     # 設定について
     ## 1080p の場合
     ## "eat_frames", 30
