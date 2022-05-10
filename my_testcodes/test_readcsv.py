@@ -417,13 +417,6 @@ class MouseData(Data):
 
 # 複数
 class MouseGroup(Data):
-    # TODO
-    #   マウスグループのデータを管理する
-    #   グループのMouseData全て
-    #   内部でデータフレームを結合するための仕組みが必要？
-    #   グループごと分析部分を実装
-    #   ファイルリストからMouseDataを回す
-
     def __init__(self, files, params):
         super().__init__()
         self.group_name = params.get("group", "nogroup")
@@ -477,22 +470,92 @@ class MouseGroup(Data):
         self.interval_eat = df_interval_eat.copy()
         self.duration_touch = df_duration_touch.copy()
         self.interval_touch = df_interval_touch.copy()
+        self.summary()
+        self.export_analysed_data()
 
     def summary(self):
-        # TODO
-        #   export csv
-        #   mean
-        #   median
-        #   mode
-        def calc_stats(data):
-            med = np.median(data)
-            mode = st.mode(data)
-            mean = np.mean()
-            return pd.DataFrame([mean, mode, med], columns=["mean", "mode", "median"])
-
+        os.makedirs(f"analyze/stats/{self.group_name}/", exist_ok=True)
         col = ["duration_eat", "interval_eat", "duration_touch", "interval_touch"]
+        all_stats = pd.DataFrame(columns=["mean", "median", "mode"])
         for data_type in col:
             data = getattr(self, data_type)
+            mean_df = data.groupby("mouse_id").mean().set_axis(["mean"], axis=1)
+            median_df = data.groupby("mouse_id").median().set_axis(["median"], axis=1)
+            bins = np.arange(
+                math.floor(data.filter(["duration", "interval"]).min()),
+                math.ceil(data.filter(["duration", "interval"]).max()),
+                1,
+            )
+            mode_df = pd.Series(
+                data.groupby("mouse_id").apply(
+                    lambda x: pd.Interval(
+                        left=bins[
+                            np.argmax(
+                                np.histogram(
+                                    x.filter(["duration", "interval"]).values, bins=bins
+                                )[0]
+                            )
+                        ],
+                        right=bins[
+                            np.argmax(
+                                np.histogram(
+                                    x.filter(["duration", "interval"]).values, bins=bins
+                                )[0]
+                            )
+                            + 1
+                        ],
+                        closed="left",
+                    )
+                ),
+                name="mode",
+            )
+            summary_df = mean_df.join([median_df, mode_df], how="outer")
+            summary_df.to_csv(
+                f"analyze/stats/{self.group_name}/{self.group_name}_{data_type}_summary_indivisual.csv"
+            )
+            # alldata_summary
+            mean_df = pd.DataFrame(
+                data.filter(["duration", "interval"]).mean()
+            ).set_axis(["mean"], axis=1)
+            median_df = pd.DataFrame(
+                data.filter(["duration", "interval"]).median()
+            ).set_axis(["median"], axis=1)
+
+            bins = np.arange(
+                math.floor(data.filter(["duration", "interval"]).min()),
+                math.ceil(data.filter(["duration", "interval"]).max()),
+                1,
+            )
+            mode_df = pd.Series(
+                data.filter(["duration", "interval"]).apply(
+                    lambda x: pd.Interval(
+                        left=bins[
+                            np.argmax(
+                                np.histogram(
+                                    x.filter(["duration", "interval"]).values, bins=bins
+                                )[0]
+                            )
+                        ],
+                        right=bins[
+                            np.argmax(
+                                np.histogram(
+                                    x.filter(["duration", "interval"]).values, bins=bins
+                                )[0]
+                            )
+                            + 1
+                        ],
+                        closed="left",
+                    )
+                ),
+                name="mode",
+            )
+            summary_df = mean_df.join([median_df, mode_df], how="outer")
+            summary_df.index = [data_type]
+            all_stats = all_stats.append(summary_df)
+        all_stats.to_csv(
+                f"analyze/stats/{self.group_name}/{self.group_name}_summary_group.csv"
+            )
+
 
     def plot_all(self):
         self.plot_eat_duration({"type": "eat"})
@@ -501,23 +564,23 @@ class MouseGroup(Data):
         self.plot_eat_interval({"type": "touch"})
 
     def export_analysed_data(self):
-        # TODO
-        #   export csv
         os.makedirs(f"data/export/{self.group_name}", exist_ok=True)
 
+        # raw data
         self.duration_eat.to_csv(
-            f"data/export/{self.group_name}/{self.group_name}_individual_data_duration_eat.csv"
+            f"data/export/{self.group_name}/{self.group_name}_individual_raw_data_duration_eat.csv"
         )
         self.interval_eat.to_csv(
-            f"data/export/{self.group_name}/{self.group_name}_individual_data_interval_eat.csv"
+            f"data/export/{self.group_name}/{self.group_name}_individual_raw_data_interval_eat.csv"
         )
         self.duration_touch.to_csv(
-            f"data/export/{self.group_name}/{self.group_name}_individual_data_duration_touch.csv"
+            f"data/export/{self.group_name}/{self.group_name}_individual_raw_data_duration_touch.csv"
         )
         self.interval_touch.to_csv(
-            f"data/export/{self.group_name}/{self.group_name}_individual_data_interval_touch.csv"
+            f"data/export/{self.group_name}/{self.group_name}_individual_raw_data_interval_touch.csv"
         )
-        # all_stats.to_csv(f"data/export/{self.group_name}/all_stats.csv")
+        # stats
+        # self.all_stats.to_csv(f"data/export/{self.group_name}/all_stats.csv")
 
     # def plot_eat_duration(self, mouse_data):
     #     data = mouse_data["type"]
@@ -1449,7 +1512,6 @@ if __name__ == "__main__":
     groupC_files = FileIo.read_items(groupC_file)
     groupD_files = FileIo.read_items(groupD_file)
 
-
     if False:
         # if len(args) <= 1:
         # 一例として距離が60pxくらい
@@ -1567,9 +1629,6 @@ if __name__ == "__main__":
                 )
             )
     if True:
-        # Class debug
-        # TODO
-        #   グループ名指定を柔軟にする
 
         groupA_data = MouseGroup(
             groupA_file,
