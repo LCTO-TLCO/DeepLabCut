@@ -477,6 +477,7 @@ class MouseGroup(Data):
         os.makedirs(f"analyze/stats/{self.group_name}/", exist_ok=True)
         col = ["duration_eat", "interval_eat", "duration_touch", "interval_touch"]
         all_stats = pd.DataFrame(columns=["mean", "median", "mode"])
+        bin_num = 0.5  # bin width
         for data_type in col:
             data = getattr(self, data_type)
             mean_df = data.groupby("mouse_id").mean().set_axis(["mean"], axis=1)
@@ -484,7 +485,7 @@ class MouseGroup(Data):
             bins = np.arange(
                 math.floor(data.filter(["duration", "interval"]).min()),
                 math.ceil(data.filter(["duration", "interval"]).max()),
-                1,
+                bin_num,
             )
             mode_df = pd.Series(
                 data.groupby("mouse_id").apply(
@@ -511,7 +512,7 @@ class MouseGroup(Data):
             )
             summary_df = mean_df.join([median_df, mode_df], how="outer")
             summary_df.to_csv(
-                f"analyze/stats/{self.group_name}/{self.group_name}_{data_type}_summary_indivisual.csv"
+                f"analyze/stats/{self.group_name}/{self.group_name}_{data_type}_summary_indivisual_bin{bin_num}.csv"
             )
             # alldata_summary
             mean_df = pd.DataFrame(
@@ -524,7 +525,7 @@ class MouseGroup(Data):
             bins = np.arange(
                 math.floor(data.filter(["duration", "interval"]).min()),
                 math.ceil(data.filter(["duration", "interval"]).max()),
-                1,
+                bin_num,
             )
             mode_df = pd.Series(
                 data.filter(["duration", "interval"]).apply(
@@ -553,9 +554,8 @@ class MouseGroup(Data):
             summary_df.index = [data_type]
             all_stats = all_stats.append(summary_df)
         all_stats.to_csv(
-                f"analyze/stats/{self.group_name}/{self.group_name}_summary_group.csv"
-            )
-
+            f"analyze/stats/{self.group_name}/{self.group_name}_summary_group_bin{bin_num}.csv"
+        )
 
     def plot_all(self):
         self.plot_eat_duration({"type": "eat"})
@@ -773,7 +773,9 @@ class GroupCompare:
             )
             plt.close(fig)
 
-    def plot_compare_graph_durations_and_intervals(self, density=False):
+    def plot_compare_graph_durations_and_intervals(
+        self, density=False, plot_upper_limit=None
+    ):
         """
         @params density: default False
                                 プロット対象データを個体の確率の平均にする
@@ -787,6 +789,7 @@ class GroupCompare:
         ]
 
         groups = "-".join([self.groups[i].group_name for i in range(len(self.groups))])
+        suffix = f"_0-{plot_upper_limit}" if plot_upper_limit else ""
 
         for data_type in data_types:
             if not os.path.exists(f"fig/{groups}/compare_histogram"):
@@ -800,6 +803,8 @@ class GroupCompare:
                     for data in self.groups
                 ]
             )
+            if plot_upper_limit is not None:
+                range_max = plot_upper_limit
             ranges = (0, math.ceil(range_max))
             bins = int(math.ceil(range_max) / 0.5)
             multiplier = 0
@@ -860,12 +865,14 @@ class GroupCompare:
             # ax.legend(bbox_to_anchor=(1.05, 0.0), loc='lower left')
             fig.tight_layout()
             plt.savefig(
-                f"fig/{groups}/compare_histogram/{groups}_{data_type.replace(' ', '_')}_compare_{'normed graph' if density else 'histogram'}.png"
+                f"fig/{groups}/compare_histogram/{groups}_{data_type.replace(' ', '_')}_compare_{'normed graph' if density else 'histogram'}{suffix}.png"
             )
             plt.show()
             plt.close()
 
-    def plot_compare_graph_cumlative_durations_and_intervals(self):
+    def plot_compare_graph_cumlative_durations_and_intervals(
+        self, plot_upper_limit=None
+    ):
         data_types = [
             "duration eat",
             "interval eat",
@@ -873,6 +880,7 @@ class GroupCompare:
             "interval touch",
         ]
         groups = "-".join([self.groups[i].group_name for i in range(len(self.groups))])
+        suffix = f"_0-{plot_upper_limit}" if plot_upper_limit else ""
 
         if not os.path.exists(f"fig/{groups}/compare_cumlative"):
             os.makedirs(f"fig/{groups}/compare_cumlative")
@@ -886,6 +894,8 @@ class GroupCompare:
                     for data in self.groups
                 ]
             )
+            if plot_upper_limit is not None:
+                range_max = plot_upper_limit
             # TODO
             ## durationに何が入っている前提だったか
             ## 基本的に
@@ -920,7 +930,7 @@ class GroupCompare:
             # ax.legend(bbox_to_anchor=(1.05, 0.0), loc='lower left')
             fig.tight_layout()
             plt.savefig(
-                f"fig/{groups}/compare_cumlative/{groups}_{data_type.replace(' ', '_')}_cumlative_histogram.png"
+                f"fig/{groups}/compare_cumlative/{groups}_{data_type.replace(' ', '_')}_cumlative_histogram{suffix}.png"
             )
             # plt.show()
             plt.close()
@@ -929,6 +939,11 @@ class GroupCompare:
         self.plot_compare_graph_cumlative_durations_and_intervals()
         self.plot_compare_graph_durations_and_intervals()
         self.plot_compare_graph_durations_and_intervals(density=True)
+        self.plot_compare_graph_cumlative_durations_and_intervals(plot_upper_limit=100)
+        self.plot_compare_graph_durations_and_intervals(plot_upper_limit=100)
+        self.plot_compare_graph_durations_and_intervals(
+            density=True, plot_upper_limit=100
+        )
         self.export_diff_wild_penk()
 
 
@@ -1499,8 +1514,8 @@ if __name__ == "__main__":
 
     groupA_name = "WT_FAT"
     groupB_name = "WT_normal"
-    groupc_name = "WT_FAT"
-    groupD_name = "WT_normal"
+    groupC_name = "penk_FAT"
+    groupD_name = "penk_normal"
 
     groupA_file = "analyze/data/WT/FAT"
     groupB_file = "analyze/data/WT/normal"
@@ -1512,7 +1527,11 @@ if __name__ == "__main__":
     groupC_files = FileIo.read_items(groupC_file)
     groupD_files = FileIo.read_items(groupD_file)
 
-    if False:
+    joblib_test = False
+    args_test = False
+    group_compare = True
+
+    if joblib_test:
         # if len(args) <= 1:
         # 一例として距離が60pxくらい
         wild_dfs, penk_dfs = joblib.Parallel(n_jobs=-2, verbose=2)(
@@ -1619,7 +1638,7 @@ if __name__ == "__main__":
         # export_diff_wild_penk([wild_dfs, penk_dfs], [{"group": groupA_name}, {"group": groupB_name}], )
         # export_analysed_data(wild_dfs, groupA_name)
         # export_analysed_data(penk_dfs, groupB_name)
-    if False:
+    if args_test:
         dfs = []
         for groups_dir in args[1:]:
             filepath_dict = FileIo.read_dircsv(groups_dir)
@@ -1628,7 +1647,7 @@ if __name__ == "__main__":
                     filepath_dict, {"group": args[1:].index(groups_dir)}
                 )
             )
-    if True:
+    if group_compare:
 
         groupA_data = MouseGroup(
             groupA_file,
@@ -1650,7 +1669,37 @@ if __name__ == "__main__":
                 "touch_distances": 50,
             },
         )
-        compare_groups = GroupCompare([groupA_data, groupB_data])
+        # groupC_data = MouseGroup(
+        #     groupC_file,
+        #     {
+        #         "group": f"{groupC_name}",
+        #         "eat_frames": 60,
+        #         "touch_frames": 20,
+        #         "eat_distances": 50,
+        #         "touch_distances": 50,
+        #     },
+        # )
+        groupD_data = MouseGroup(
+            groupD_file,
+            {
+                "group": f"{groupD_name}",
+                "eat_frames": 60,
+                "touch_frames": 20,
+                "eat_distances": 50,
+                "touch_distances": 50,
+            },
+        )
+        for x, y in itertools.combinations(
+            [
+                groupA_data,
+                groupB_data,
+                # groupC_data,
+                groupD_data,
+            ],
+            2,
+        ):
+            compare_groups = GroupCompare([x, y])
+        # compare_groups = GroupCompare([groupA_data, groupB_data])
     # 設定について
     ## 1080p の場合
     ## "eat_frames", 30
